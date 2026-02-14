@@ -16,14 +16,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+      - name: Find Gradle wrapper
+        run: |
+          echo "== Root files =="
+          ls -la
+          echo "== Find gradlew =="
+          find . -maxdepth 4 -type f -name "gradlew" -print
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      - name: Build Debug APK (auto-detect)
+        run: |
+          WRAPPER_DIR=$(dirname "$(find . -maxdepth 4 -type f -name "gradlew" | head -n 1)")
+          echo "Wrapper dir: $WRAPPER_DIR"
+          if [ -z "$WRAPPER_DIR" ]; then
+            echo "ERROR: gradlew not found in repo."
+            exit 1
+          fi
+          chmod +x "$WRAPPER_DIR/gradlew"
+          cd "$WRAPPER_DIR"
+          ./gradlew assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: "**/app/build/outputs/apk/debug/*.apk"
